@@ -2,93 +2,123 @@
 
 import React, { useRef, useState } from "react";
 import { VncScreen } from "react-vnc";
-import VncDisplay from 'react-vnc-display';
-import { Wrench } from "lucide-react";
+import { TrashIcon, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-
 import { Button } from "@/components/ui/button";
-import { AlertButton } from "@/components/ui/alertButton";
+import { useRouter } from "next/navigation";
 
-async function removeBrowser(container_id: string) {
-  console.log("ran");
-
-  let headers = new Headers();
-  headers.append("Content-Type", "application/json");
-
-  let res = await fetch("https://admin.privatebrowser.dev/api/container/remove", {
-    headers: headers,
-    method: "POST",
-    body: JSON.stringify({
-      user_id: "ciSBLV4JHcWw3oBbY5bk",
-      container_id: container_id,
-    }),
-  });
-
-  console.log(res);
-}
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Page({ params }: { params: { browserId: string } }) {
+  const router = useRouter();
   const ref = useRef(null);
-
   const browserId = params.browserId;
-  let vncUrl = `ws://admin.privatebrowser.dev/${browserId}`;
+  let vncUrl = `https://admin.privatebrowser.dev/${browserId}`;
 
-  const [file, setFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const userId = "ciSBLV4JHcWw3oBbY5bk"; 
+  const containerId = browserId; 
+
+  async function removeBrowser(container_id: string) {
+    console.log("ran");
+
+    let headers = new Headers();
+    headers.append("Content-Type", "application/json");
+
+    let res = await fetch(
+      "https://admin.privatebrowser.dev/api/container/remove",
+      {
+        headers: headers,
+        method: "POST",
+        body: JSON.stringify({
+          user_id: "ciSBLV4JHcWw3oBbY5bk",
+          container_id: container_id,
+        }),
+      }
+    );
+
+    router.push("/");
+
+    console.log(res);
+  }
+  const handleFileChange = (e: any) => {
+    setSelectedFile(e.target.files[0]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!file) return;
+  const handleUpload = async () => {
+    if (!selectedFile) return;
 
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("user-id","ciSBLV4JHcWw3oBbY5bk")
+    formData.append("file", selectedFile);
+    formData.append("userId", userId); 
+    formData.append("containerId", containerId); 
 
     try {
-      const response = await fetch("/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (response.ok) {
-        alert("File uploaded successfully!");
+      if (res.ok) {
+        console.log("File uploaded successfully");
       } else {
-        alert("File upload failed.");
+        console.error("Failed to upload file");
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while uploading the file.");
+      console.error("Error uploading file:", error);
     }
   };
 
   return (
     <div className="browser relative">
       <div className="absolute right-0">
-        <HoverCard>
-          <HoverCardTrigger className="block w-max">
-            <Wrench />
-          </HoverCardTrigger>
-          <HoverCardContent>
-            <AlertButton
-              onclick={() => removeBrowser(browserId)}
-              messege={"Permenetly delete browser"}
-              btnMessege="Remove browser"
-            />
-            <form onSubmit={handleSubmit}>
-              <Input type="file" onChange={handleFileChange} accept=".zip" />
-              <Button type="submit">Upload</Button>
-            </form>
-          </HoverCardContent>
-        </HoverCard>
+        <AlertDialog>
+          <AlertDialogTrigger>
+            <Button>Tools</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Browser Management</AlertDialogTitle>
+              <AlertDialogDescription>
+                <Button
+                  onClick={() => {
+                    removeBrowser(containerId);
+                  }}
+                  variant="destructive"
+                  className="w-full py-6 text-lg font-semibold"
+                >
+                  <TrashIcon className="mr-2 h-6 w-6" />
+                  Delete
+                </Button>
+                <hr />
+                <h2 className="text-xl my-5">Upload files</h2>
+                <form onSubmit={handleUpload} className="space-y-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="file">Select File</Label>
+                    <Input onChange={handleFileChange} id="file" type="file" />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Upload
+                  </Button>
+                </form>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <VncScreen
@@ -99,10 +129,14 @@ export default function Page({ params }: { params: { browserId: string } }) {
           width: "100vw",
           height: "100vh",
         }}
+        rfbOptions={{
+          credentials: {
+            username: "user",
+            password: "passwd",
+          },
+        }}
         ref={ref}
       />
-
-
     </div>
   );
 }

@@ -13,12 +13,6 @@ import Link from 'next/link'
 import { AlertButton } from "./alertButton"
 
 
-type user = {
-  all_browsers: string[],
-  fname:string,
-  lname:string
-
-}
 
 
 
@@ -138,7 +132,7 @@ export default function BrowserTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {browserProfiles.map((profile, index) => (
+          {browserProfiles.map((profile:any, index:any) => (
             <TableRow key={index}>
               <TableCell>{profile.name}</TableCell>
               <TableCell>

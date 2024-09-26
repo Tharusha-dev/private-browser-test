@@ -8,7 +8,7 @@ function App() {
 
   return (
     <VncScreen
-      url='ws://152.42.168.142/test_1'
+      url='ws://152.42.168.142:5901/'
       scaleViewport
       background="#000000"
       style={{
